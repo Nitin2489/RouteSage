@@ -133,16 +133,38 @@ def diagnose_connectivity(
     failed_paths = find_paths(operational_only=False)
 
     # Include every structurally valid path and identify whether it works.
+
     operational_path_keys = {
-        tuple(candidate["path"]) for candidate in candidates
+        (
+            tuple(candidate["path"]),
+            tuple(
+                (
+                    edge["source_interface"],
+                    edge["destination_interface"],
+                )
+                for edge in candidate["edges"]
+            ),
+        )
+        for candidate in candidates
     }
+
     all_paths = [
         {
             **candidate,
-            "operational": tuple(candidate["path"]) in operational_path_keys,
+            "operational": (
+                tuple(candidate["path"]),
+                tuple(
+                    (
+                        edge["source_interface"],
+                        edge["destination_interface"],
+                    )
+                    for edge in candidate["edges"]
+                ),
+            ) in operational_path_keys,
         }
         for candidate in failed_paths
     ]
+
 
     if candidates:
         candidate = candidates[0]
