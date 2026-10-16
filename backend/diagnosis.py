@@ -27,6 +27,7 @@ def diagnose_connectivity(
             "reason": "router_not_found",
             "path": [],
             "evidence": [],
+            "paths": [],
         }
 
     if source_router == destination_router:
@@ -37,6 +38,13 @@ def diagnose_connectivity(
             "reason": "same_router",
             "path": [source_router],
             "evidence": [],
+            "paths": [
+                {
+                    "path": [source_router],
+                    "edges": [],
+                    "operational": True,
+                }
+            ],
         }
 
     result = repo.graph.query(
@@ -82,7 +90,7 @@ def diagnose_connectivity(
             ],
         )
 
-    
+
     def find_paths(operational_only: bool) -> list[dict]:
         """Find simple paths, optionally requiring operational edges."""
         max_depth = max(1, len(known_routers) - 1)
@@ -120,7 +128,21 @@ def diagnose_connectivity(
         return paths
 
 
+
     candidates = find_paths(operational_only=True)
+    failed_paths = find_paths(operational_only=False)
+
+    # Include every structurally valid path and identify whether it works.
+    operational_path_keys = {
+        tuple(candidate["path"]) for candidate in candidates
+    }
+    all_paths = [
+        {
+            **candidate,
+            "operational": tuple(candidate["path"]) in operational_path_keys,
+        }
+        for candidate in failed_paths
+    ]
 
     if candidates:
         candidate = candidates[0]
@@ -135,9 +157,8 @@ def diagnose_connectivity(
             ),
             "path": candidate["path"],
             "evidence": candidate["edges"],
+            "paths": all_paths,
         }
-
-    failed_paths = find_paths(operational_only=False)
 
     if failed_paths:
         direct_only = all(
@@ -158,6 +179,7 @@ def diagnose_connectivity(
                 for candidate in failed_paths
                 for edge in candidate["edges"]
             ],
+            "paths": all_paths,
         }
 
     return {
@@ -167,6 +189,7 @@ def diagnose_connectivity(
         "reason": "no_path",
         "path": [],
         "evidence": [],
+        "paths": [],
     }
 
 
