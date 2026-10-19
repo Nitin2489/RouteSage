@@ -1,4 +1,4 @@
-# RouteSage — Graph-Grounded Network Reliability Intelligence
+# RouteSage - Graph-Grounded Network Reliability Intelligence
 
 RouteSage is a network troubleshooting prototype that models routers, interfaces, and links in FalkorDB, evaluates source-to-destination reachability, exposes path and failure evidence, and stores incident history. An optional Gemini integration explains the graph-verified diagnosis and suggests investigation steps.
 
