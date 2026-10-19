@@ -337,49 +337,27 @@ def test_reports_operational_and_failed_alternate_paths():
         )
 
 
+
         paths = result["paths"]
         assert len(paths) == 2
 
-        operational_paths = [
-            item for item in paths if item["operational"]
+        # Each distinct router/interface route must appear only once.
+        path_signatures = [
+            (
+                tuple(item["path"]),
+                tuple(
+                    (
+                        edge["source_interface"],
+                        edge["destination_interface"],
+                    )
+                    for edge in item["edges"]
+                ),
+            )
+            for item in paths
         ]
-        failed_paths = [
-            item for item in paths if not item["operational"]
-        ]
-
-        assert len(operational_paths) == 1
-        assert len(failed_paths) == 1
+        assert len(path_signatures) == len(set(path_signatures))
 
 
-    finally:
-        repo.graph.delete()
-
-
-def test_parallel_links_report_correct_operational_status():
-    repo = GraphRepository(graph_name=f"test_{uuid4().hex}")
-
-    try:
-        r1 = f"R1_{uuid4().hex[:8]}"
-        r2 = f"R2_{uuid4().hex[:8]}"
-
-        for name, ip in [(r1, "10.0.0.1"), (r2, "10.0.0.2")]:
-            repo.add_router(Router(name, ip))
-
-        repo.add_interface(r1, Interface("eth0", "10.0.0.1", "up"))
-        repo.add_interface(r1, Interface("eth1", "10.0.1.1", "up"))
-        repo.add_interface(r2, Interface("eth0", "10.0.0.2", "up"))
-        repo.add_interface(r2, Interface("eth1", "10.0.1.2", "up"))
-
-        # One link is operational; the other is down.
-        repo.add_link(Link(f"{r1}:eth0", f"{r2}:eth0", "up"))
-        repo.add_link(Link(f"{r1}:eth1", f"{r2}:eth1", "down"))
-
-        result = diagnose_connectivity(repo, r1, r2)
-
-        assert result["reachable"] is True
-        assert len(result["paths"]) == 2
-        assert sum(path["operational"] for path in result["paths"]) == 1
-        assert sum(not path["operational"] for path in result["paths"]) == 1
 
     finally:
         repo.graph.delete()

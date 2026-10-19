@@ -91,6 +91,23 @@ def diagnose_connectivity(
         )
 
 
+    # FalkorDB's undirected relationship match can expose the same
+    # connection more than once. Remove exact duplicate adjacency entries
+    # while preserving distinct parallel links.
+    for router, neighbors in adjacency.items():
+        unique_neighbors = {}
+        for neighbor, edge in neighbors:
+            key = (
+                neighbor,
+                edge["source_interface"],
+                edge["destination_interface"],
+                edge["source_state"],
+                edge["destination_state"],
+                edge["link_state"],
+            )
+            unique_neighbors.setdefault(key, (neighbor, edge))
+        adjacency[router] = list(unique_neighbors.values())
+
     def find_paths(operational_only: bool) -> list[dict]:
         """Find simple paths, optionally requiring operational edges."""
         max_depth = max(1, len(known_routers) - 1)
