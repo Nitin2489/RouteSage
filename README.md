@@ -1,128 +1,200 @@
 # RouteSage - Graph-Grounded Network Reliability Intelligence
 
-RouteSage is a network troubleshooting prototype that models routers, interfaces, and links in FalkorDB, evaluates source-to-destination reachability, exposes path and failure evidence, and stores incident history. An optional Gemini integration explains the graph-verified diagnosis and suggests investigation steps.
+RouteSage is a graph-based network reliability and incident-diagnosis system built with FastAPI and FalkorDB. It models routers, interfaces, and network links, evaluates connectivity across multi-hop paths, analyzes hypothetical link failures, and maintains incident investigation history. An optional Gemini integration provides AI-assisted explanations grounded in graph-derived evidence.
 
-## How RouteSage works
+## Overview
 
-RouteSage is a graph-grounded network operations agent for the question:
-**â€œWhat breaks if this link fails, what still works, and what should an
-operator do next?”** It follows multi-hop relationships in FalkorDB instead of
-guessing from isolated records, compares physical-link failure with
-end-to-end reachability, remembers investigations across sessions, and shows
-the evidence path behind each recommendation. The agent can recommend a
-specific safe graph action, while topology changes and incident resolution
-remain under explicit human control.
+RouteSage addresses a central network reliability question:
 
-## What it does
+**“What breaks if a link fails, what connectivity survives, and what should an operator investigate next?”**
 
-- Represents routers, interfaces, and connections as graph entities and relationships in FalkorDB.
-- Evaluates operational paths using link and interface state, and reports alternate paths that are operational or affected by failures.
-- Provides read-only failure-impact analysis for a selected link by comparing the current graph with a hypothetical outage. It reports affected router pairs, surviving paths, newly unreachable pairs, and maximum link-disjoint operational paths as the redundancy metric.
-- Provides a FastAPI backend and a browser dashboard with Overview, Topology Explorer, AI Investigation, Incident Center, and Reliability Analytics views.
-- Computes live topology analytics from the graph snapshot, including operational/failed link counts, average operational degree, and routers with limited operational neighbors.
-- Filters incident history locally by route, cause, symptom, remediation, or incident identifier, with open/resolved status filters.
-- Stores incident records and retrieves matching cases by endpoints and symptom.
-- Uses stable, unordered interface-pair identifiers for link-associated incident deduplication. Restoring a link resolves only incidents tied to that exact link, and only when end-to-end reachability is subsequently verified.
-- Offers an opt-in, bounded simulated telemetry event stream for local demonstrations; it is never live device telemetry.
-- Optionally calls Gemini to summarize the verified diagnosis, interpret evidence, and suggest safe investigation steps.
-- Provides a graph investigation agent that combines topology diagnosis,
-  failure impact, and incident memory into one explainable decision. Each
-  remembered investigation is stored in FalkorDB and linked to the analyzed
-  router pair.
+Rather than relying solely on isolated device records, RouteSage evaluates relationships between routers, interfaces, and links in a graph database. It separates deterministic topology analysis from optional AI-generated explanations, allowing operators to inspect the underlying evidence behind a diagnosis.
+
+## Key Features
+
+- **Graph-based topology modeling:** Represents routers, interfaces, and network connections in FalkorDB.
+- **Connectivity diagnosis:** Evaluates operational paths using link and interface state.
+- **Failure-impact analysis:** Compares the current topology with a hypothetical link-outage scenario to identify affected router pairs, surviving paths, newly unreachable pairs, and operational link-disjoint path counts.
+- **Evidence-driven investigation:** Combines deterministic diagnosis, failed-interface evidence, topology analysis, and relevant incident history.
+- **Incident management:** Supports incident history, filtering, status tracking, and link-associated incident deduplication.
+- **Recovery verification:** Supports reachability checks after simulated link restoration before associated incidents are resolved.
+- **Reliability analytics:** Calculates topology metrics, including operational and failed link counts, average operational degree, and routers with limited operational neighbors.
+- **Interactive dashboard:** Provides Overview, Topology Explorer, AI Investigation, Incident Center, and Reliability Analytics views.
+- **Optional Gemini integration:** Generates explanations and investigation suggestions from supplied graph context, with a deterministic fallback when AI output is unavailable.
+- **Investigation memory:** Persists investigation records in FalkorDB and associates them with analyzed routers.
+- **Simulated telemetry:** Provides a bounded, in-memory event stream for demonstrating network state changes without requiring live network devices.
 
 ## Architecture
 
-The following diagram illustrates RouteSage's architecture, including the dashboard, API services, FalkorDB graph, optional Gemini explanations, incident memory, and simulated telemetry.
+RouteSage consists of a browser-based dashboard, a FastAPI backend, a FalkorDB graph database, optional Gemini integration, incident memory, and simulated telemetry.
 
 ![RouteSage system architecture](docs/RouteSage_System_Architecture.png)
-## Quick start (Windows PowerShell)
 
-1. Start Docker Desktop. If the demo container does not exist, run:
+### Technology Stack
 
-   ```powershell
-   docker run -d --name routesage-falkordb -p 6379:6379 -p 3000:3000 falkordb/falkordb:latest
-   ```
+| Component | Technology |
+|---|---|
+| Backend API | Python, FastAPI |
+| Graph database | FalkorDB |
+| Graph queries | Cypher-compatible graph queries |
+| AI-assisted explanations | Google Gemini, optional |
+| Frontend | Browser-based dashboard |
+| Testing | pytest |
+| Local infrastructure | Docker |
 
-   If the container already exists but is stopped, use `docker start routesage-falkordb` instead.
+## Installation and Configuration
 
-2. From the repository root, create and activate a virtual environment, then install dependencies:
+### Prerequisites
 
-   ```powershell
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   python -m pip install -r requirements.txt
-   ```
+- Python
+- Docker Desktop
+- Git
+- A Gemini API key, if AI-assisted explanations are required
 
-3. Configure optional Gemini explanations by creating a local `.env` file (do not commit it):
+### 1. Start FalkorDB
 
-   ```dotenv
-   GEMINI_API_KEY=your_api_key
-   GEMINI_MODEL=gemini-3-flash-preview
-   ROUTESAGE_AI_RATE_LIMIT=20
-   ```
+Start Docker Desktop and launch the database container:
 
-   Without `GEMINI_API_KEY`, graph diagnosis remains available through `POST /api/diagnose`. `POST /api/ai/diagnose` returns a clearly labeled deterministic fallback when Gemini is unconfigured, times out, is rate-limited, unavailable, or returns malformed JSON; that fallback contains only supplied graph-diagnosis facts. FalkorDB defaults to `localhost:6379`; `FALKORDB_HOST`, `FALKORDB_PORT`, and `FALKORDB_GRAPH` can override the defaults.
+```powershell
+docker run -d --name routesage-falkordb -p 6379:6379 -p 3000:3000 falkordb/falkordb:latest
+```
 
-   `ROUTESAGE_AI_RATE_LIMIT` defaults to 20 AI requests per client IP per 60 seconds in the local process. It is a local safeguard, not a distributed production rate limiter.
+If the container already exists but is stopped:
 
-4. Start the API and dashboard:
+```powershell
+docker start routesage-falkordb
+```
 
-   ```powershell
-   python -m uvicorn backend.api:app --reload --port 8001
-   ```
+Verify that the container is running:
 
-   Open http://127.0.0.1:8001. Interactive API documentation is available at http://127.0.0.1:8001/docs.
+```powershell
+docker ps --filter "name=routesage-falkordb"
+```
 
-## Demo flow
+The default database connection is `localhost:6379`.
 
-1. Verify the database connection status.
-2. If the graph is empty, use `POST /api/demo/seed` in `/docs` to load the demonstration topology.
-3. In **Topology Explorer**, inspect routers and links; select a connection to simulate a failure.
-4. In **AI Investigation**, choose `EDGE-01` to `DB-01` and select
-   **Ask graph agent**. Show its decision, failed-interface evidence,
-   operational route, impact comparison, and evidence trace. Explain that the
-   investigation is remembered in FalkorDB.
-5. Use **Diagnose connectivity** for the optional Gemini explanation. Gemini
-   interprets graph facts but cannot change the network.
-6. In **Incident Center**, search incident records and filter by open/resolved status.
-7. In **Reliability Analytics**, inspect metrics calculated from the current graph snapshot; inject/restore a link and refresh to see the figures change.
-8. Restore the link and confirm connectivity/redundancy changes.
+### 2. Create the Python Environment
 
+Run the following commands from the repository root:
 
-## Tests
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
 
-With FalkorDB running, execute:
+If PowerShell prevents virtual-environment activation, invoke its interpreter directly:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file in the repository root if optional Gemini integration is required:
+
+```dotenv
+GEMINI_API_KEY=your_api_key
+GEMINI_MODEL=gemini-3-flash-preview
+ROUTESAGE_AI_RATE_LIMIT=20
+```
+
+Keep API keys private and do not commit `.env` to version control.
+
+The application supports the following database configuration variables:
+
+| Variable | Purpose |
+|---|---|
+| `FALKORDB_HOST` | FalkorDB hostname |
+| `FALKORDB_PORT` | FalkorDB port |
+| `FALKORDB_GRAPH` | Graph name |
+| `GEMINI_API_KEY` | Optional Gemini API authentication |
+| `GEMINI_MODEL` | Gemini model identifier |
+| `ROUTESAGE_AI_RATE_LIMIT` | AI request limit per client IP |
+
+The default AI request limit is 20 requests per client IP per 60-second window in the local process. This is a local safeguard, not a distributed production rate limiter.
+
+When Gemini is unavailable, unconfigured, rate-limited, or returns unusable output, the AI diagnosis endpoint can return a deterministic fallback based on supplied graph-diagnosis facts.
+
+### 4. Run the Application
+
+Start the API and dashboard server from the repository root:
+
+```powershell
+python -m uvicorn backend.api:app --reload --port 8001
+```
+
+The application serves the browser dashboard and API from the same FastAPI process.
+
+## Demonstration Workflow
+
+The demonstration workflow covers topology inspection, failure analysis, investigation, and recovery verification.
+
+1. Confirm that FalkorDB is available.
+2. Load the demonstration topology using `POST /api/demo/seed` when the graph is empty.
+3. Inspect routers, interfaces, and links in the Topology Explorer.
+4. Simulate a link failure using the dashboard's failure-simulation controls.
+5. Run a connectivity diagnosis and inspect the associated failed-interface evidence.
+6. Analyze the impact of the hypothetical outage, including surviving paths and newly unreachable router pairs.
+7. Review the investigation output and compare deterministic graph evidence with the optional Gemini explanation.
+8. Inspect incident records and reliability metrics.
+9. Restore the simulated link and rerun the connectivity diagnosis to verify end-to-end reachability.
+
+Observed results depend on the topology and graph state loaded into FalkorDB.
+
+## API Capabilities
+
+The backend exposes endpoints for topology initialization, deterministic diagnosis, AI-assisted diagnosis, graph-agent investigation, and simulated telemetry.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/demo/seed` | Load demonstration topology data |
+| `POST /api/diagnose` | Run deterministic connectivity diagnosis |
+| `POST /api/ai/diagnose` | Request an AI-assisted diagnosis |
+| `POST /api/agent/investigate` | Run a graph-grounded investigation |
+| `POST /api/simulation/start` | Start simulated event recording |
+| `GET /api/simulation/events` | Retrieve recorded simulated events |
+| `POST /api/simulation/stop` | Stop simulated event recording |
+
+Request and response schemas are defined by the FastAPI application.
+
+## Graph Investigation Agent
+
+The graph investigation agent combines deterministic topology diagnosis, failure-impact analysis, failed-interface evidence, and relevant incident context.
+
+The `POST /api/agent/investigate` endpoint evaluates the current FalkorDB graph and can persist an `Investigation` node connected to the analyzed `Router` nodes when `remember: true` is enabled.
+
+The endpoint does not itself change network link state, create incidents, or resolve incidents. Its proposed action is a recommendation for operator review, not an executed remediation. The endpoint reports `executed: false`.
+
+## Simulated Telemetry
+
+RouteSage includes a bounded, in-memory event stream for demonstrating simulated link-state changes.
+
+- Events are explicitly labeled with `source: simulated`.
+- Event history belongs to the running application process.
+- Events are not retained across application restarts.
+- The stream does not represent telemetry collected from physical network devices.
+
+## Testing
+
+Run the backend test suite from the repository root:
 
 ```powershell
 python -m pytest backend/tests -v
 ```
 
-The tests use isolated graph names. They require a reachable FalkorDB instance.
+The tests use isolated graph names and require a reachable FalkorDB instance. Start FalkorDB before running the suite.
 
-## Simulated telemetry
+## Scope and Limitations
 
-`POST /api/simulation/start` enables recording of simulated link-state events caused by the demo controls. Inspect the bounded local stream with `GET /api/simulation/events`, then call `POST /api/simulation/stop`. Every event is labeled `source: simulated`; RouteSage does not ingest telemetry from real network devices.
+- The bundled topology is demonstration data, not a live network inventory.
+- RouteSage does not currently ingest SNMP, streaming telemetry, or packet captures.
+- Simulated telemetry is not equivalent to real-time monitoring of physical network devices.
+- Failure-impact analysis is bounded to at most 100 router pairs and 100 paths per pair. It evaluates hypothetical graph states rather than predicting real-world network behavior.
+- Incident deduplication uses stable, unordered interface-pair identifiers for link-associated incidents. Legacy incidents without a link reference are preserved as independent records.
+- Gemini-generated explanations are not formal proofs. Root-cause statements should be treated as hypotheses, and recommendations require human review.
+- Investigation memory is local to the configured FalkorDB graph and has no tenant isolation or retention policy in this prototype.
+- Production deployment would require appropriate authentication, authorization, secret management, deployment hardening, and operational observability.
 
-## Graph agent contract
-
-`POST /api/agent/investigate` runs a bounded investigation over the current
-FalkorDB state. It calls deterministic diagnosis, identifies failed interface
-evidence, compares a selected or graph-identified link outage, and reads
-matching incident context. With `remember: true` (the dashboard default), it
-persists an `Investigation` node connected to the analyzed `Router` nodes.
-The endpoint never changes link state, creates incidents, or resolves incidents.
-Its `proposed_action` is an explicit, non-executed request shape for an operator
-to review and execute; `executed` is always `false` in this endpoint.
-
-## Scope and limitations
-
-- The bundled topology is demonstration data, not live device telemetry.
-- There is no SNMP, streaming telemetry, packet-capture ingestion, or autonomous remediation.
-- Failure-impact analysis is bounded to at most 100 router pairs and 100 paths per pair; it is a hypothetical comparison, not a predictive network simulator.
-- Link-associated incident deduplication uses source, destination, and a stable unordered pair of interface IDs. Legacy incidents without a link reference are preserved as independent records rather than deduplicated from free text.
-- Gemini output is generated from supplied graph context but is not a formal proof. Treat cause statements as hypotheses and recommendations as suggestions for human review.
-- Investigation memory is local to the configured FalkorDB graph; it is not
-  tenant-isolated and has no retention policy in this prototype.
-- This is a prototype, not a production network-management system; authentication, authorization, deployment hardening, and operational observability would be needed before production use.
-
-RouteSage combines graph-verified diagnosis, traceable evidence, and persistent incident memory to support network troubleshooting.
+RouteSage is a network reliability engineering prototype focused on graph-grounded diagnosis, traceable evidence, and incident investigation memory.
