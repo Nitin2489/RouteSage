@@ -1,12 +1,12 @@
-﻿# RouteSage â€” Graph-Grounded Network Reliability Intelligence
+# RouteSage — Graph-Grounded Network Reliability Intelligence
 
 RouteSage is a network troubleshooting prototype that models routers, interfaces, and links in FalkorDB, evaluates source-to-destination reachability, exposes path and failure evidence, and stores incident history. An optional Gemini integration explains the graph-verified diagnosis and suggests investigation steps.
 
-## Submission statement
+## How RouteSage works
 
 RouteSage is a graph-grounded network operations agent for the question:
 **â€œWhat breaks if this link fails, what still works, and what should an
-operator do next?â€** It follows multi-hop relationships in FalkorDB instead of
+operator do next?”** It follows multi-hop relationships in FalkorDB instead of
 guessing from isolated records, compares physical-link failure with
 end-to-end reachability, remembers investigations across sessions, and shows
 the evidence path behind each recommendation. The agent can recommend a
@@ -125,4 +125,4 @@ to review and execute; `executed` is always `false` in this endpoint.
   tenant-isolated and has no retention policy in this prototype.
 - This is a prototype, not a production network-management system; authentication, authorization, deployment hardening, and operational observability would be needed before production use.
 
-Built for Graph Hacks 2026: graph context, traceable evidence, and persistent incident memory for network troubleshooting.
+RouteSage combines graph-verified diagnosis, traceable evidence, and persistent incident memory to support network troubleshooting.
