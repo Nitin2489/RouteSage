@@ -1,0 +1,67 @@
+[
+  {
+    "routers": 5,
+    "links": 4,
+    "interfaces": 8,
+    "topology": "chain",
+    "diagnosis_median_ms": 0.017172499838125077,
+    "diagnosis_p95_ms": 0.021128999833308626,
+    "impact_median_ms": 0.4758254999615019,
+    "impact_p95_ms": 0.7998959999895305,
+    "router_pairs_analyzed": 10,
+    "affected_pairs": 4,
+    "newly_unreachable_pairs": 4
+  },
+  {
+    "routers": 8,
+    "links": 7,
+    "interfaces": 14,
+    "topology": "chain",
+    "diagnosis_median_ms": 0.027541500003280817,
+    "diagnosis_p95_ms": 0.04491699974096264,
+    "impact_median_ms": 2.6443635001669463,
+    "impact_p95_ms": 8.665936999932455,
+    "router_pairs_analyzed": 28,
+    "affected_pairs": 7,
+    "newly_unreachable_pairs": 7
+  },
+  {
+    "routers": 10,
+    "links": 9,
+    "interfaces": 18,
+    "topology": "chain",
+    "diagnosis_median_ms": 0.0356760001523071,
+    "diagnosis_p95_ms": 0.06147400017653126,
+    "impact_median_ms": 6.007801000123436,
+    "impact_p95_ms": 14.02900499988391,
+    "router_pairs_analyzed": 45,
+    "affected_pairs": 9,
+    "newly_unreachable_pairs": 9
+  },
+  {
+    "routers": 12,
+    "links": 11,
+    "interfaces": 22,
+    "topology": "chain",
+    "diagnosis_median_ms": 0.04217950004203885,
+    "diagnosis_p95_ms": 0.0803359998826636,
+    "impact_median_ms": 10.422765999919648,
+    "impact_p95_ms": 16.8611249996502,
+    "router_pairs_analyzed": 66,
+    "affected_pairs": 11,
+    "newly_unreachable_pairs": 11
+  },
+  {
+    "routers": 14,
+    "links": 13,
+    "interfaces": 26,
+    "topology": "chain",
+    "diagnosis_median_ms": 0.04573100000015984,
+    "diagnosis_p95_ms": 0.052537000101438025,
+    "impact_median_ms": 19.16026999992937,
+    "impact_p95_ms": 31.748252999932447,
+    "router_pairs_analyzed": 91,
+    "affected_pairs": 13,
+    "newly_unreachable_pairs": 13
+  }
+]
